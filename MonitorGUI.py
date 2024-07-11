@@ -201,12 +201,11 @@ class PublishDock(QDockWidget): ### Sprinkler Controller
         self.ePublisherTopic.setText("irregation/sprinklerController")
         self.ePublisherTopic.setReadOnly(True) 
 
-        self.eQOS=QComboBox()
-        self.eQOS.addItems(["0","1","2"])
+        #self.eQOS=QComboBox()
+        #self.eQOS.addItems(["0","1","2"])
 
         self.eRetainCheckbox = QCheckBox()
 
-        
         self.turnOnButton = QPushButton("Turn On",self)
         self.turnOnButton.clicked.connect(self.on_turnOnButton_click)
 
@@ -218,7 +217,7 @@ class PublishDock(QDockWidget): ### Sprinkler Controller
         
         formLayot=QFormLayout()        
         formLayot.addRow("Topic",self.ePublisherTopic)
-        formLayot.addRow("QOS",self.eQOS)
+        #formLayot.addRow("QOS",self.eQOS)
         formLayot.addRow("Retain",self.eRetainCheckbox)
         formLayot.addRow("",self.turnOnButton)
         formLayot.addRow("",self.turnOffButton)
@@ -252,17 +251,18 @@ class SubscribeDock(QDockWidget): ## Getting Params from Sensors
         self.eSubscribeTopic.setText("irregation/v1") 
         self.eSubscribeTopic.setReadOnly(True) 
         
-        self.eQOS = QComboBox()
-        self.eQOS.addItems(["0","1","2"])
+        #self.eQOS = QComboBox()
+       # self.eQOS.addItems(["0","1","2"])
         
         self.eRecMess=QTextEdit()
         self.eRecMess.setReadOnly(True)
         self.eRecMess.append("Waiting for Senseors repsone....")
         
+        
 
         formLayot=QFormLayout()       
         formLayot.addRow("Topic",self.eSubscribeTopic)
-        formLayot.addRow("QOS",self.eQOS)
+        #formLayot.addRow("QOS",self.eQOS)
         formLayot.addRow("Received",self.eRecMess)
     
                 
@@ -271,15 +271,29 @@ class SubscribeDock(QDockWidget): ## Getting Params from Sensors
         self.setWidget(widget)
         self.setWindowTitle("Sensor Details")
         
-        
+        self.LastTemp = 0
+        self.LastUV = 0
+
+
     def connectToSensores(self):
         print(self.eSubscribeTopic.text())
         self.mc.subscribe_to(self.eSubscribeTopic.text())
+        mainwin.autoPilotDock.LastTempValue.setText(str(self.LastTemp))
+        mainwin.autoPilotDock.LastUvValue.setText(str(self.LastUV))
         
     
     # create function that update text in received message window
     def update_mess_win(self,text):
         self.eRecMess.append(text)
+
+        currentTxt = text.split(":")
+        if(currentTxt[0] == "Temperature"):
+            self.LastTemp = currentTxt[1]
+            mainwin.autoPilotDock.LastTempValue.setText(self.LastTemp)
+        else:
+            self.LastUV = currentTxt[1]
+            mainwin.autoPilotDock.LastUvValue.setText(self.LastUV)
+
         
 class MainWindow(QMainWindow): ### First Conection Menu
     
@@ -298,16 +312,13 @@ class MainWindow(QMainWindow): ### First Conection Menu
 
         # Init QDockWidget objects        
         self.connectionDock = ConnectionDock(self.mc)   
-
-
         self.publishDock =  PublishDock(self.mc)
         self.subscribeDock = SubscribeDock(self.mc)
+        self.autoPilotDock = autoPilotWin()
         
 
         self.addDockWidget(Qt.TopDockWidgetArea, self.connectionDock)
-        #self.addDockWidget(Qt.BottomDockWidgetArea, self.publishDock)
-        #self.addDockWidget(Qt.BottomDockWidgetArea, self.subscribeDock)
-        
+       
 
 class MainMenuWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -320,14 +331,18 @@ class MainMenuWindow(QMainWindow):
         
         ### Move To Sensores Params Window
         self.sensParamsButt = QPushButton("See Sensoers Params",self)
-        self.sensParamsButt.setGeometry(20,50,200,50)
+        self.sensParamsButt.setGeometry(50,20,200,50)
         self.sensParamsButt.clicked.connect(self.on_button_MoveToParams)
 
         ### Move To Turn On/Off Sprinklers Window
         self.sprinkControlButt = QPushButton("Sprinkler Controler",self)
-        self.sprinkControlButt.setGeometry(20,100,200,50)
+        self.sprinkControlButt.setGeometry(50,70,200,50)
         self.sprinkControlButt.clicked.connect(self.on_button_MoveToTurnSprinklerWin)
 
+        #### Automate Sprinkler Controleer according to status
+        self.autoPilotButt = QPushButton("Automate Controller",self)
+        self.autoPilotButt.setGeometry(50,120,200,50)
+        self.autoPilotButt.clicked.connect(self.on_button_AutoPilot)
 
 
     def on_button_MoveToParams(self):
@@ -335,6 +350,38 @@ class MainMenuWindow(QMainWindow):
     
     def on_button_MoveToTurnSprinklerWin(self):
         mainwin.publishDock.show()
+
+    def on_button_AutoPilot(self):
+        mainwin.autoPilotDock.show()
+         
+
+class autoPilotWin(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+
+        self.setGeometry(30, 100, 300, 200)
+        self.setWindowTitle('AutoPilot Controller') 
+
+        self.tmpLabel = QLabel('Last Temp measured:', self)
+        self.tmpLabel.setGeometry(20,0,150,50)
+
+        self.LastTempValue = QLineEdit(self)
+        self.LastTempValue.setGeometry(160,15,100,20)
+        self.LastTempValue.setReadOnly(True)
+
+        self.uvLabel = QLabel('Last UV measured:', self)
+        self.uvLabel.setGeometry(20,45,150,20)
+
+        self.LastUvValue = QLineEdit(self)
+        self.LastUvValue.setGeometry(160,45,100,20)
+        self.LastUvValue.setReadOnly(True)
+    
+
+
+
+        
+        
+
 
 
 app = QApplication(sys.argv)
