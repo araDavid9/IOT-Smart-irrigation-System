@@ -154,6 +154,9 @@ class ConnectionDock(QDockWidget):
         self.eConnectbtn.clicked.connect(self.on_button_connect_click)
         self.eConnectbtn.setStyleSheet("background-color: red")
         
+
+        self.MainMenu = MainMenuWindow()
+
         formLayot=QFormLayout()
         formLayot.addRow("Host",self.eHostInput )
         formLayot.addRow("Port",self.ePort )
@@ -182,8 +185,11 @@ class ConnectionDock(QDockWidget):
         self.mc.set_password(self.ePassword.text())        
         self.mc.connect_to()        
         self.mc.start_listening()
+        self.MainMenu.show()
+        mainwin.subscribeDock.connectToSensores()
+
             
-class PublishDock(QDockWidget):
+class PublishDock(QDockWidget): ### Sprinkler Controller
     """Publisher """
 
     def __init__(self,mc):
@@ -192,33 +198,48 @@ class PublishDock(QDockWidget):
         self.mc = mc        
                 
         self.ePublisherTopic=QLineEdit()
-        self.ePublisherTopic.setText(pub_topic)
+        self.ePublisherTopic.setText("irregation/sprinklerController")
+        self.ePublisherTopic.setReadOnly(True) 
 
         self.eQOS=QComboBox()
         self.eQOS.addItems(["0","1","2"])
 
         self.eRetainCheckbox = QCheckBox()
 
-        self.eMessageBox=QPlainTextEdit()        
-        self.ePublishButton = QPushButton("Publish",self)
+        
+        self.turnOnButton = QPushButton("Turn On",self)
+        self.turnOnButton.clicked.connect(self.on_turnOnButton_click)
+
+
+        self.turnOffButton = QPushButton("Turn Off",self)
+        self.turnOffButton.setStyleSheet("background-color: red")
+        self.turnOffButton.clicked.connect(self.on_turnOffButton_click)
+
         
         formLayot=QFormLayout()        
         formLayot.addRow("Topic",self.ePublisherTopic)
         formLayot.addRow("QOS",self.eQOS)
         formLayot.addRow("Retain",self.eRetainCheckbox)
-        formLayot.addRow("Message",self.eMessageBox)
-        formLayot.addRow("",self.ePublishButton)
+        formLayot.addRow("",self.turnOnButton)
+        formLayot.addRow("",self.turnOffButton)
         
-        self.ePublishButton.clicked.connect(self.on_button_publish_click)
+       
         
         widget = QWidget(self)
         widget.setLayout(formLayot)
         self.setWidget(widget) 
-        self.setWindowTitle("Publish")         
+        self.setWindowTitle("Sprinkler Controller")         
        
-    def on_button_publish_click(self):
-        self.mc.publish_to(self.ePublisherTopic.text(), self.eMessageBox.toPlainText())
-        self.ePublishButton.setStyleSheet("background-color: yellow")
+    def on_turnOnButton_click(self):
+        self.mc.publish_to(self.ePublisherTopic.text(), "Turn On")
+        self.turnOnButton.setStyleSheet("background-color: green")
+        self.turnOffButton.setStyleSheet("background-color: gray")
+    
+    def on_turnOffButton_click(self):
+        self.mc.publish_to(self.ePublisherTopic.text(), "Turn Off")
+        self.turnOnButton.setStyleSheet("background-color: gray")
+        self.turnOffButton.setStyleSheet("background-color:red")
+
         
 class SubscribeDock(QDockWidget): ## Getting Params from Sensors
     """Subscribe """
@@ -236,6 +257,7 @@ class SubscribeDock(QDockWidget): ## Getting Params from Sensors
         
         self.eRecMess=QTextEdit()
         self.eRecMess.setReadOnly(True)
+        self.eRecMess.append("Waiting for Senseors repsone....")
         
 
         formLayot=QFormLayout()       
@@ -249,16 +271,17 @@ class SubscribeDock(QDockWidget): ## Getting Params from Sensors
         self.setWidget(widget)
         self.setWindowTitle("Sensor Details")
         
+        
     def connectToSensores(self):
         print(self.eSubscribeTopic.text())
         self.mc.subscribe_to(self.eSubscribeTopic.text())
-        self.eSubscribeButton.setStyleSheet("background-color: yellow")
+        
     
     # create function that update text in received message window
     def update_mess_win(self,text):
         self.eRecMess.append(text)
         
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow): ### First Conection Menu
     
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -270,20 +293,49 @@ class MainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
 
         # set up main window
-        self.setGeometry(30, 100, 800, 600)
+        self.setGeometry(30, 100, 400, 200)
         self.setWindowTitle('Smart Irregation System')        
 
         # Init QDockWidget objects        
-        self.connectionDock = ConnectionDock(self.mc)        
-        self.publishDock =   PublishDock(self.mc)
+        self.connectionDock = ConnectionDock(self.mc)   
+
+
+        self.publishDock =  PublishDock(self.mc)
         self.subscribeDock = SubscribeDock(self.mc)
         
 
         self.addDockWidget(Qt.TopDockWidgetArea, self.connectionDock)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.publishDock)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.subscribeDock)
+        #self.addDockWidget(Qt.BottomDockWidgetArea, self.publishDock)
+        #self.addDockWidget(Qt.BottomDockWidgetArea, self.subscribeDock)
         
+
+class MainMenuWindow(QMainWindow):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+
+       
+    # set up main window
+        self.setGeometry(30, 100, 300, 200)
+        self.setWindowTitle('Smart Irregation System Menu')  
+        
+        ### Move To Sensores Params Window
+        self.sensParamsButt = QPushButton("See Sensoers Params",self)
+        self.sensParamsButt.setGeometry(20,50,200,50)
+        self.sensParamsButt.clicked.connect(self.on_button_MoveToParams)
+
+        ### Move To Turn On/Off Sprinklers Window
+        self.sprinkControlButt = QPushButton("Sprinkler Controler",self)
+        self.sprinkControlButt.setGeometry(20,100,200,50)
+        self.sprinkControlButt.clicked.connect(self.on_button_MoveToTurnSprinklerWin)
+
+
+
+    def on_button_MoveToParams(self):
+        mainwin.subscribeDock.show()
     
+    def on_button_MoveToTurnSprinklerWin(self):
+        mainwin.publishDock.show()
+
 
 app = QApplication(sys.argv)
 mainwin = MainWindow()

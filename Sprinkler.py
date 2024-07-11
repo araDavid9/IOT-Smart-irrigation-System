@@ -15,7 +15,7 @@ from mqtt_init import *
 global clientname
 r=random.randrange(1,10000000)
 clientname="IOT_client-Id-"+str(r)
-relay_topic = 'irregation/startSprinkler'
+relay_topic = 'irregation/sprinklerController'
 global ON
 ON = False
 
@@ -202,12 +202,12 @@ class ConnectionDock(QDockWidget):
         if ON:
             self.ePushtbtn.setStyleSheet("background-color: gray")
             ON = False
-             self.publish_to("irregation/v1/","Stoped to work!!")
+            
           
         else:
             self.ePushtbtn.setStyleSheet("background-color: green")
             ON = True   
-            self.publish_to("irregation/v1/","Started to work!!")
+            
            
       
 class MainWindow(QMainWindow):
