@@ -163,17 +163,9 @@ class ConnectionDock(QDockWidget):
 
         self.ePushtbtn=QPushButton("", self)
         self.ePushtbtn.setToolTip("Push me")
-        self.ePushtbtn.setStyleSheet("background-color: gray")
+        self.ePushtbtn.setStyleSheet("background-color: red")
 
         formLayot=QFormLayout()
-        # formLayot.addRow("Host",self.eHostInput )
-        # formLayot.addRow("Port",self.ePort )
-        # formLayot.addRow("Client ID", self.eClientID)
-        # formLayot.addRow("User Name",self.eUserName )
-        # formLayot.addRow("Password",self.ePassword )
-        # formLayot.addRow("Keep Alive",self.eKeepAlive )
-        # formLayot.addRow("SSL",self.eSSL )
-        # formLayot.addRow("Clean Session",self.eCleanSession )
         formLayot.addRow("Turn On/Off",self.eConnectbtn)
         formLayot.addRow("Sub topic",self.eSubscribeTopic)
         formLayot.addRow("Status",self.ePushtbtn)
@@ -198,15 +190,13 @@ class ConnectionDock(QDockWidget):
         self.mc.subscribe_to(self.eSubscribeTopic.text())
     
     def update_btn_state(self,text):
-        global ON
-        if ON:
-            self.ePushtbtn.setStyleSheet("background-color: gray")
-            ON = False
-            
-          
-        else:
+        
+        if text == "Turn On":
             self.ePushtbtn.setStyleSheet("background-color: green")
-            ON = True   
+            
+        else:
+            self.ePushtbtn.setStyleSheet("background-color: red")
+               
             
            
       

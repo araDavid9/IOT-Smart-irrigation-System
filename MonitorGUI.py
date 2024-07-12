@@ -293,6 +293,9 @@ class SubscribeDock(QDockWidget): ## Getting Params from Sensors
         else:
             self.LastUV = currentTxt[1]
             mainwin.autoPilotDock.LastUvValue.setText(self.LastUV)
+        
+        if(mainwin.autoPilotDock.IsAutoPilot == True):
+            mainwin.autoPilotDock.CheckIfOptimalToTurnOnOrOff()
 
         
 class MainWindow(QMainWindow): ### First Conection Menu
@@ -349,9 +352,11 @@ class MainMenuWindow(QMainWindow):
         mainwin.subscribeDock.show()
     
     def on_button_MoveToTurnSprinklerWin(self):
+        mainwin.autoPilotDock.IsAutoPilot = False
         mainwin.publishDock.show()
 
     def on_button_AutoPilot(self):
+        mainwin.autoPilotDock.IsAutoPilot = True
         mainwin.autoPilotDock.show()
          
 
@@ -359,7 +364,9 @@ class autoPilotWin(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
 
-        self.setGeometry(30, 100, 300, 200)
+        self.IsAutoPilot = False
+
+        self.setGeometry(30, 100, 300, 150)
         self.setWindowTitle('AutoPilot Controller') 
 
         self.tmpLabel = QLabel('Last Temp measured:', self)
@@ -375,6 +382,21 @@ class autoPilotWin(QMainWindow):
         self.LastUvValue = QLineEdit(self)
         self.LastUvValue.setGeometry(160,45,100,20)
         self.LastUvValue.setReadOnly(True)
+
+        self.sprinklerStatus=QPushButton("", self)
+        self.sprinklerStatus.setGeometry(120,80,60,20)
+        self.sprinklerStatus.setStyleSheet("background-color: red")
+
+    def CheckIfOptimalToTurnOnOrOff(self):
+        if(self.LastTempValue.text() != '0' and self.LastUvValue.text() != '0'):
+            if(int(self.LastUvValue.text()) <= 5 and float(self.LastTempValue.text()) <= 22.5):
+                mainwin.publishDock.mc.publish_to("irregation/sprinklerController", "Turn On")
+                self.sprinklerStatus.setStyleSheet("background-color: green")
+            else:
+                 mainwin.publishDock.mc.publish_to("irregation/sprinklerController", "Turn Off")
+                 self.sprinklerStatus.setStyleSheet("background-color: red")
+        
+
     
 
 
